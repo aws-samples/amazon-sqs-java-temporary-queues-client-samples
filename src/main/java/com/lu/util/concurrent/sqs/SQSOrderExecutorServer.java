@@ -16,6 +16,7 @@ import com.amazonaws.services.sqs.AmazonSQSResponderClientBuilder;
 import com.amazonaws.services.sqs.MessageContent;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.util.SQSMessageConsumer;
+import com.amazonaws.services.sqs.util.SQSMessageConsumerBuilder;
 import com.lu.order.Order;
 import com.lu.util.concurrent.CannotExecuteOrderException;
 import com.lu.util.concurrent.OrderExecuter;
@@ -32,7 +33,11 @@ public class SQSOrderExecutorServer implements Consumer<Message> {
 	
 	public SQSOrderExecutorServer(AmazonSQSResponder responseClient, String requestQueueUrl) {
 		this.responseClient = responseClient;
-        this.consumer = new SQSMessageConsumer(responseClient.getAmazonSQS(), requestQueueUrl, this);
+		this.consumer = SQSMessageConsumerBuilder.standard()
+				.withAmazonSQS(responseClient.getAmazonSQS())
+				.withQueueUrl(requestQueueUrl)
+				.withConsumer(this)
+				.build();
 		this.executer = new OrderExecuter();
 	}
 	

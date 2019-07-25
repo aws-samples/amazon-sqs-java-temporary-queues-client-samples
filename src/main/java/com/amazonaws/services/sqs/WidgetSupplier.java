@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.util.SQSMessageConsumer;
+import com.amazonaws.services.sqs.util.SQSMessageConsumerBuilder;
 
 public class WidgetSupplier {
 	
@@ -17,14 +18,17 @@ public class WidgetSupplier {
 		AmazonSQSResponder responder = AmazonSQSResponderClientBuilder.standard()
 		        .withAmazonSQS(sqs)
                 .build();
-		
-		SQSMessageConsumer consumer = new SQSMessageConsumer(responder.getAmazonSQS(), queueUrl, message -> {
-			int x = ThreadLocalRandom.current().nextInt(10) + 1;
-			String responseBody = "Here are " + x + " more widgets. Enjoy!";
-			System.out.println("Sending reply: " + responseBody);
-			responder.sendResponseMessage(MessageContent.fromMessage(message),
-					                      new MessageContent(responseBody));
-		});
+
+		SQSMessageConsumer consumer = SQSMessageConsumerBuilder.standard()
+				.withAmazonSQS(responder.getAmazonSQS())
+				.withQueueUrl(queueUrl)
+				.withConsumer(message -> {
+					int x = ThreadLocalRandom.current().nextInt(10) + 1;
+					String responseBody = "Here are " + x + " more widgets. Enjoy!";
+					System.out.println("Sending reply: " + responseBody);
+					responder.sendResponseMessage(MessageContent.fromMessage(message),
+							                      new MessageContent(responseBody));
+				}).build();
 		consumer.start();
 		
 		while (running) {};
